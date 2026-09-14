@@ -310,18 +310,32 @@ async function fetchBMKGEarthquake() {
         const statusEl = document.getElementById('eq-status');
         tsunamiZoneLayer.clearLayers();
 
-        if (potensi.toLowerCase().includes("tsunami")) {
+        // Cek potensi tsunami dari BMKG (atau aktifkan simulasi gelombang berjalan jika ingin dicoba)
+        const isTsunamiWarning = potensi.toLowerCase().includes("tsunami");
+
+        if (isTsunamiWarning) {
             statusEl.innerText = currentLang === 'id' ? "BERPOTENSI TSUNAMI!" : "TSUNAMI WARNING!";
             statusEl.className = "status-danger";
-
-            L.circle([currentEqLat, currentEqLng], {
-                color: 'red', fillColor: '#f03', fillOpacity: 0.3, radius: 50000
-            }).bindPopup("<b>Zona Waspada Tsunami</b>").addTo(tsunamiZoneLayer);
-
         } else {
             statusEl.innerText = currentLang === 'id' ? "Tidak Berpotensi Tsunami" : "No Tsunami Threat";
             statusEl.className = "status-safe";
         }
+
+        // Efek Animasi Gelombang Berjalan (Pulsing Wave) di titik pusat gempa
+        const waveIcon = L.divIcon({
+            className: 'custom-tsunami-wave',
+            iconSize: [60, 60],
+            iconAnchor: [30, 30]
+        });
+        L.marker([currentEqLat, currentEqLng], { icon: waveIcon }).addTo(tsunamiZoneLayer);
+
+        // Lingkaran zona siaga
+        L.circle([currentEqLat, currentEqLng], {
+            color: isTsunamiWarning ? 'red' : '#3498db',
+            fillColor: isTsunamiWarning ? '#f03' : '#3498db',
+            fillOpacity: 0.2,
+            radius: 40000
+        }).addTo(tsunamiZoneLayer);
 
         earthquakeLayer.clearLayers();
         const eqIcon = L.divIcon({ className: 'custom-eq-marker', html: '🔴', iconSize: [35, 35] });
