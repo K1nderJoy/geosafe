@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="app-title">GeoSafe - Sistem Peringatan Dini & Evakuasi Bencana</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body class="light-mode">
+
+    <header>
+        <div class="header-content">
+            <div>
+                <h1 id="header-main-title">⚠️ GeoSafe Tsunami Early Warning System</h1>
+                <p id="header-sub-title">Sistem Pemantauan Gempa, Zona Tsunami, dan Jalur Evakuasi Aman</p>
+            </div>
+            
+            <div class="header-controls">
+                <span id="network-status" class="net-online" title="Status Jaringan">🟢 Online</span>
+                <select id="lang-switcher" onchange="switchLanguage(this.value)">
+                    <option value="id">🇮🇩 ID</option>
+                    <option value="en">🇬🇧 EN</option>
+                </select>
+                <button id="theme-toggle" onclick="toggleTheme()">🌙</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="dashboard-container">
+        
+        <!-- Kolom Kiri: Peta Topografi & Kontrol SOS -->
+        <section class="map-section-wrapper">
+            <div class="map-section">
+                <div id="map"></div>
+            </div>
+            
+            <!-- Kirim Koordinat SOS -->
+            <div class="card sos-card">
+                <h2 id="sos-title">🚨 Darurat & Kirim Koordinat</h2>
+                <div class="sos-buttons">
+                    <a href="tel:112" class="btn-sos" id="btn-call-112">📞 Darurat (112)</a>
+                    <button onclick="shareSosLocation()" class="btn-sos-share" id="btn-share-loc">📍 Bagikan Lokasi Saya</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Kolom Kanan: Panel Informasi, ETA Fisika, Cuaca, & Panduan -->
+        <section class="info-section">
+            
+            <!-- Status Gempa Terkini + Refresh -->
+            <div class="card alert-card">
+                <div class="card-header-flex">
+                    <h2 id="eq-card-title">Status Gempa Terkini</h2>
+                    <button id="refresh-btn" onclick="fetchBMKGEarthquake()">🔄 Segarkan</button>
+                </div>
+                <div id="earthquake-info">
+                    <p><strong id="label-loc">Lokasi:</strong> <span id="eq-location">Memuat data...</span></p>
+                    <p><strong id="label-mag">Magnitudo:</strong> <span id="eq-mag">-</span></p>
+                    <p><strong id="label-depth">Kedalaman:</strong> <span id="eq-depth">-</span></p>
+                    <p><strong id="label-status">Potensi Tsunami:</strong> <span id="eq-status" class="status-safe">Memuat...</span></p>
+                </div>
+            </div>
+
+            <!-- Estimasi Tsunami (ETA Fisika) -->
+            <div class="card tsunami-card">
+                <h2 id="tsu-card-title">Estimasi Waktu Gelombang (ETA)</h2>
+                <div class="eta-box">
+                    <span id="tsunami-eta">-- Menit</span>
+                    <p id="eta-desc">Perhitungan jarak dari pusat gempa ke posisi Anda.</p>
+                </div>
+            </div>
+
+            <!-- Panel Cuaca & Risiko Lingkungan Sekitar -->
+            <div class="card weather-card">
+                <h2 id="weather-card-title">🌤️ Kondisi Cuaca & Risiko Evakuasi</h2>
+                <div id="weather-info">
+                    <p><strong>Suhu:</strong> <span id="w-temp">-</span></p>
+                    <p><strong>Kondisi:</strong> <span id="w-cond">Memuat cuaca...</span></p>
+                    <p><strong>Status Jalur:</strong> <span id="w-risk" class="status-safe">Aman untuk evakuasi</span></p>
+                </div>
+            </div>
+
+            <!-- Panduan Mitigasi Cepat -->
+            <div class="card guide-card">
+                <h2 id="guide-card-title">🛡️ Panduan Saat Gempa Terjadi</h2>
+                <ul class="guide-list" id="guide-list-content">
+                    <li>1. <strong>Merunduk (Drop):</strong> Turunkan tubuh ke lantai.</li>
+                    <li>2. <strong>Lindungi (Cover):</strong> Berlindung di bawah meja kokoh.</li>
+                    <li>3. <strong>Pegang (Hold On):</strong> Pegangan pada kaki meja.</li>
+                </ul>
+            </div>
+
+            <!-- Titik Aman Evakuasi -->
+            <div class="card shelter-card">
+                <h2 id="shelter-card-title">Rekomendasi Titik Aman Terdekat</h2>
+                <ul id="shelter-list">
+                    <li>Memindai lokasi Anda...</li>
+                </ul>
+            </div>
+
+            <!-- Riwayat Gempa Susulan -->
+            <div class="card aftershock-card">
+                <h2 id="aftershock-card-title">📉 Riwayat Gempa Susulan (24 Jam)</h2>
+                <div id="aftershock-list">
+                    <p class="sub-text">Memuat daftar gempa...</p>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <footer>
+        <p id="footer-text">&copy; 2026 GeoSafe App. Didukung oleh Data BMKG Real-Time & OpenStreetMap.</p>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
