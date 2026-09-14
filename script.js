@@ -20,6 +20,7 @@ let currentUserLat = null;
 let currentUserLng = null;
 let currentEqLat = null;
 let currentEqLng = null;
+let isTsunamiActive = false;
 
 const translations = {
     id: {
@@ -36,6 +37,7 @@ const translations = {
         labelDepth: "Kedalaman:",
         labelStatus: "Potensi Tsunami:",
         tsuCard: "Estimasi Waktu Gelombang (ETA)",
+        etaSafe: "Aman (0 Menit)",
         etaDesc: "Perhitungan jarak dari pusat gempa ke posisi Anda.",
         weatherCard: "🌤️ Kondisi Cuaca & Risiko Evakuasi",
         guideCard: "🛡️ Panduan Saat Gempa Terjadi",
@@ -59,6 +61,7 @@ const translations = {
         labelDepth: "Depth:",
         labelStatus: "Tsunami Potential:",
         tsuCard: "Wave Arrival Time Estimation (ETA)",
+        etaSafe: "Safe (0 Minutes)",
         etaDesc: "Distance calculation from epicenter to your position.",
         weatherCard: "🌤️ Weather Conditions & Evacuation Risks",
         guideCard: "🛡️ Earthquake Safety Guide",
@@ -95,6 +98,10 @@ function switchLanguage(lang) {
     document.getElementById('shelter-card-title').innerText = t.shelterCard;
     document.getElementById('aftershock-card-title').innerText = t.aftershockCard;
     document.getElementById('footer-text').innerHTML = t.footerText;
+
+    if (!isTsunamiActive) {
+        document.getElementById('tsunami-eta').innerText = t.etaSafe;
+    }
 }
 
 function toggleTheme() {
@@ -125,12 +132,18 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 
 function calculateTsunamiETA(eqLat, eqLng, userLat, userLng) {
     if (!eqLat || !userLat) return;
+    const etaEl = document.getElementById('tsunami-eta');
+    
+    if (!isTsunamiActive) {
+        etaEl.innerText = translations[currentLang].etaSafe;
+        return;
+    }
+
     const distKm = calculateDistance(eqLat, eqLng, userLat, userLng);
     const tsunamiSpeedKmH = 700; 
     const timeHours = distKm / tsunamiSpeedKmH;
     const timeMinutes = Math.round(timeHours * 60);
 
-    const etaEl = document.getElementById('tsunami-eta');
     if (timeMinutes <= 1) {
         etaEl.innerText = currentLang === 'id' ? "< 1 Menit" : "< 1 Minute";
     } else {
@@ -310,32 +323,30 @@ async function fetchBMKGEarthquake() {
         const statusEl = document.getElementById('eq-status');
         tsunamiZoneLayer.clearLayers();
 
-        // Cek potensi tsunami dari BMKG (atau aktifkan simulasi gelombang berjalan jika ingin dicoba)
-        const isTsunamiWarning = potensi.toLowerCase().includes("tsunami");
+        // Validasi murni teks potensi dari BMKG (hanya aktif jika mengandung kata tsunami)
+        isTsunamiActive = potensi.toLowerCase().includes("tsunami");
 
-        if (isTsunamiWarning) {
+        if (isTsunamiActive) {
             statusEl.innerText = currentLang === 'id' ? "BERPOTENSI TSUNAMI!" : "TSUNAMI WARNING!";
             statusEl.className = "status-danger";
+
+            // Animasi gelombang berjalan & lingkaran zona merah
+            const waveIcon = L.divIcon({ className: 'custom-tsunami-wave', iconSize: [60, 60], iconAnchor: [30, 30] });
+            L.marker([currentEqLat, currentEqLng], { icon: waveIcon }).addTo(tsunamiZoneLayer);
+
+            L.circle([currentEqLat, currentEqLng], {
+                color: 'red', fillColor: '#f03', fillOpacity: 0.3, radius: 50000
+            }).bindPopup("<b>Zona Waspada Tsunami</b>").addTo(tsunamiZoneLayer);
+
+            if (currentUserLat) {
+                calculateTsunamiETA(currentEqLat, currentEqLng, currentUserLat, currentUserLng);
+            }
         } else {
             statusEl.innerText = currentLang === 'id' ? "Tidak Berpotensi Tsunami" : "No Tsunami Threat";
             statusEl.className = "status-safe";
+            // Paksa teks ETA menjadi aman
+            document.getElementById('tsunami-eta').innerText = translations[currentLang].etaSafe;
         }
-
-        // Efek Animasi Gelombang Berjalan (Pulsing Wave) di titik pusat gempa
-        const waveIcon = L.divIcon({
-            className: 'custom-tsunami-wave',
-            iconSize: [60, 60],
-            iconAnchor: [30, 30]
-        });
-        L.marker([currentEqLat, currentEqLng], { icon: waveIcon }).addTo(tsunamiZoneLayer);
-
-        // Lingkaran zona siaga
-        L.circle([currentEqLat, currentEqLng], {
-            color: isTsunamiWarning ? 'red' : '#3498db',
-            fillColor: isTsunamiWarning ? '#f03' : '#3498db',
-            fillOpacity: 0.2,
-            radius: 40000
-        }).addTo(tsunamiZoneLayer);
 
         earthquakeLayer.clearLayers();
         const eqIcon = L.divIcon({ className: 'custom-eq-marker', html: '🔴', iconSize: [35, 35] });
@@ -346,11 +357,6 @@ async function fetchBMKGEarthquake() {
             .openPopup();
 
         map.setView([currentEqLat, currentEqLng], 7);
-
-        if (currentUserLat) {
-            calculateTsunamiETA(currentEqLat, currentEqLng, currentUserLat, currentUserLng);
-        }
-
         fetchAftershocks();
 
     } catch (error) {
